@@ -11,7 +11,7 @@ model.compile(loss=ks.losses.mean_squared_error, optimizer=ks.optimizers.Adam(0.
 x = np.random.rand(1024)*math.pi*2
 y = np.sin(x)
 
-model.fit(x, y, epochs=2, batch_size=1)
+model.fit(x, y, epochs=2, batch_size=128)
 
 prediction = np.array([0, math.pi * 0.5, math.pi * 2])
 print(model.predict(prediction))
