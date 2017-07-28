@@ -13,4 +13,3 @@ y = np.array([[0], [1], [1], [0]])
 model.fit(x, y, epochs=1000, batch_size=4)
 
 print(model.predict(x))
-
