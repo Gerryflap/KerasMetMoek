@@ -1,9 +1,11 @@
 import numpy as np
 import keras as ks
+import matplotlib.pyplot as plt
 from keras.callbacks import ModelCheckpoint
 
+
 # load ascii text and covert to lowercase
-file_path = "./sources/jules_verne.txt"
+file_path = "./sources/temp.txt"
 raw_text = open(file_path).read()
 raw_text = raw_text.lower()
 
@@ -36,7 +38,7 @@ model.add(ks.layers.LSTM(256))
 model.add(ks.layers.Dropout(0.2))
 model.add(ks.layers.Dense(len(alphabet), activation=ks.activations.softmax))
 model.compile(loss=ks.losses.categorical_crossentropy, optimizer=ks.optimizers.Adam(0.001))
-# model.load_weights("weights-improvement-01-1.7923.hdf5")
+# model.load_weights("weights-improvement-27-0.0650.hdf5")
 
 # define the checkpoint
 save_file_path="weights-improvement-{epoch:02d}-{loss:.4f}.hdf5"
@@ -48,8 +50,11 @@ t_dim = np.reshape(one_hot_text, [-1, 1, len(alphabet)])
 x = np.concatenate([t_dim[i:len(t_dim)-(n_input_chars)+i] for i in range(n_input_chars)], axis=1)
 y = np.reshape(t_dim[n_input_chars:], [-1, len(alphabet)])
 
+print(alphabet)
 try:
-    history = model.fit(x, y, epochs=2, batch_size=1024, callbacks=callbacks_list)
+    history = model.fit(x, y, epochs=60, batch_size=32, callbacks=callbacks_list)
 except KeyboardInterrupt:
     print("Training was interrupted")
 
+plt.plot(np.log(history.history['loss']))
+plt.show()

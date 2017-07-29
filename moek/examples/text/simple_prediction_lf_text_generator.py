@@ -1,6 +1,13 @@
 import keras as ks
 import numpy as np
 
+def predict_sentence(model, start_text, alphabet, n):
+    one_hot = text_to_one_hot(start_text, alphabet)
+    for i in range(n):
+        out = model.predict(np.array([one_hot[-n_input_chars:]]))
+        one_hot = np.concatenate([one_hot, out], axis=0)
+    return one_hot_to_text(one_hot, alphabet)
+
 
 def text_to_one_hot(text, alphabet):
     one_hot_text = []
@@ -27,19 +34,22 @@ def alphabet_frequency(string, alphabet):
 
 
 # load ascii text and covert to lowercase
-file_path = "./sources/jules_verne.txt"
+file_path = "./sources/temp.txt"
 raw_text = open(file_path).read()
 raw_text = raw_text.lower()
+print(raw_text)
+# alphabet = ""
+# for c in raw_text:
+#     if c not in alphabet:
+#         alphabet += c
+#         print(alphabet)
 
-alphabet = ""
-for c in raw_text:
-    if c not in alphabet:
-        alphabet += c
+alphabet = sorted(list(set(raw_text)))
 
 n_input_chars = 10
 
 # load the network weights
-filename = "weights-improvement-01-2.1400.hdf5"
+filename = "weights-improvement-58-0.0396.hdf5"
 model = ks.models.load_model(filename)
 model.compile(loss='categorical_crossentropy', optimizer='adam')
 
@@ -58,4 +68,13 @@ y = np.reshape(t_dim[n_input_chars:], [-1, len(alphabet)])
 
 predicted_text = np.reshape(model.predict(x), [-1, len(alphabet)])
 
-print(one_hot_to_text(predicted_text, alphabet))
+print(alphabet)
+# print(one_hot_to_text(predicted_text, alphabet))
+
+
+while True:
+    input_text = input("%d long text: "%n_input_chars)
+    if len(input_text) != n_input_chars:
+        print("learn to read idiot")
+    else:
+        print(predict_sentence(model, input_text, alphabet, 50))
