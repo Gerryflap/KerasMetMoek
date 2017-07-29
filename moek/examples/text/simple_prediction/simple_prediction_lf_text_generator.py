@@ -34,7 +34,7 @@ def alphabet_frequency(string, alphabet):
 
 
 # load ascii text and covert to lowercase
-file_path = "./sources/temp.txt"
+file_path = "../sources/temp.txt"
 raw_text = open(file_path).read()
 raw_text = raw_text.lower()
 print(raw_text)
@@ -67,10 +67,6 @@ x = np.concatenate([t_dim[i:len(t_dim)-(n_input_chars)+i] for i in range(n_input
 y = np.reshape(t_dim[n_input_chars:], [-1, len(alphabet)])
 
 predicted_text = np.reshape(model.predict(x), [-1, len(alphabet)])
-
-print(alphabet)
-# print(one_hot_to_text(predicted_text, alphabet))
-
 
 while True:
     input_text = input("%d long text: "%n_input_chars)

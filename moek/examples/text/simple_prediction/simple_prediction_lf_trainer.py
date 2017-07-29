@@ -5,7 +5,7 @@ from keras.callbacks import ModelCheckpoint
 
 
 # load ascii text and covert to lowercase
-file_path = "./sources/temp.txt"
+file_path = "../sources/temp.txt"
 raw_text = open(file_path).read()
 raw_text = raw_text.lower()
 
