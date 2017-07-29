@@ -40,7 +40,7 @@ t_dim = np.reshape(one_hot_text, [-1, 1, len(alphabet)])
 x = np.concatenate([t_dim[i:len(t_dim)-(n_input_chars)+i] for i in range(n_input_chars)], axis=1)
 y = np.reshape(t_dim[n_input_chars:], [-1, len(alphabet)])
 
-history = model.fit(x, y, epochs=400, batch_size=128)
+history = model.fit(x, y, epochs=1500, batch_size=128)
 
 print(one_hot_to_text(np.reshape(model.predict(x), [-1, len(alphabet)]), alphabet))
 print(one_hot_to_text(y, alphabet))
