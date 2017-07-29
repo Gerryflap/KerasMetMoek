@@ -30,20 +30,24 @@ one_hot_text = text_to_one_hot(text, alphabet)
 print(one_hot_text)
 
 model = ks.models.Sequential()
-model.add(ks.layers.LSTM(128, input_shape=(n_input_chars, len(alphabet)), return_sequences=True))
+model.add(ks.layers.LSTM(1024, input_shape=(n_input_chars, len(alphabet)), return_sequences=True))
 model.add(ks.layers.LSTM(len(alphabet)))
 model.add(ks.layers.Activation(ks.activations.softmax))
-model.compile(loss=ks.losses.categorical_crossentropy, optimizer=ks.optimizers.Adam(0.001))
+model.compile(loss=ks.losses.categorical_crossentropy, optimizer=ks.optimizers.Adam(0.0001))
 
 t_dim = np.reshape(one_hot_text, [-1, 1, len(alphabet)])
 # Generate 5 long sequences
 x = np.concatenate([t_dim[i:len(t_dim)-(n_input_chars)+i] for i in range(n_input_chars)], axis=1)
 y = np.reshape(t_dim[n_input_chars:], [-1, len(alphabet)])
 
-history = model.fit(x, y, epochs=1500, batch_size=128)
+try:
+    history = model.fit(x, y, epochs=5000, batch_size=128)
+except KeyboardInterrupt:
+    print("Training interrupted")
 
 print(one_hot_to_text(np.reshape(model.predict(x), [-1, len(alphabet)]), alphabet))
 print(one_hot_to_text(y, alphabet))
+model.save("./model-lstm.banaan")
 plt.plot(np.log(history.history['loss']))
 plt.show()
 
