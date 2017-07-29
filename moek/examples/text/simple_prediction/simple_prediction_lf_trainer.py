@@ -38,7 +38,7 @@ model.add(ks.layers.LSTM(256))
 model.add(ks.layers.Dropout(0.2))
 model.add(ks.layers.Dense(len(alphabet), activation=ks.activations.softmax))
 model.compile(loss=ks.losses.categorical_crossentropy, optimizer=ks.optimizers.Adam(0.001))
-# model.load_weights("weights-improvement-27-0.0650.hdf5")
+model.load_weights("weights-improvement-58-0.0396.hdf5")
 
 # define the checkpoint
 save_file_path="weights-improvement-{epoch:02d}-{loss:.4f}.hdf5"
