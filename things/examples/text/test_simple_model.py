@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 
 n_input_chars = 5
 #text = "abababababababababababababab"
-text = "Hallo, je wist het waarschijnlijk al: ik ben een banaan. Je zult je wellicht afvragen, wat doet een banaan zoal? Bananen zijn voornamelijk bezig met liggen of hangen. Er zijn echter situaties waar een banaan opgegeten wordt of opgegeten is. Dat is wat een banaan doet."
-text = text.lower()
+text_original = "Hallo, je wist het waarschijnlijk al: ik ben een banaan. Je zult je wellicht afvragen, wat doet een banaan zoal? Bananen zijn voornamelijk bezig met liggen of hangen. Er zijn echter situaties waar een banaan opgegeten wordt of opgegeten is. Dat is wat een banaan doet."
+text_original = text_original.lower()
+text_fake = "banaan is een banaan"
 alphabet = ""
-for c in text:
+for c in text_original:
     if c not in alphabet:
         alphabet += c
 
@@ -35,34 +36,30 @@ def alphabet_frequency(string, alphabet):
     return sorted(result, key=lambda elem: -elem[1])
 
 
-one_hot_text = text_to_one_hot(text, alphabet)
+one_hot_text = text_to_one_hot(text_original, alphabet)
 print(one_hot_text)
 
-model = ks.models.Sequential()
-model.add(ks.layers.LSTM(512, input_shape=(n_input_chars, len(alphabet))))
-model.add(ks.layers.Dense(len(alphabet), activation=ks.activations.relu))
-model.add(ks.layers.Activation(ks.activations.softmax))
-model.compile(loss=ks.losses.categorical_crossentropy, optimizer=ks.optimizers.Adam(0.001))
+model = ks.models.load_model('./model-lstm.banaan')
 
 t_dim = np.reshape(one_hot_text, [-1, 1, len(alphabet)])
 # Generate 5 long sequences
 x = np.concatenate([t_dim[i:len(t_dim)-(n_input_chars)+i] for i in range(n_input_chars)], axis=1)
 y = np.reshape(t_dim[n_input_chars:], [-1, len(alphabet)])
 
-try:
-    history = model.fit(x, y, epochs=1000, batch_size=256)
-except KeyboardInterrupt:
-    print("Training interrupted")
+# try:
+#     history = model.fit(x, y, epochs=1000, batch_size=256)
+# except KeyboardInterrupt:
+#     print("Training interrupted")
 
 predicted_text = np.reshape(model.predict(x), [-1, len(alphabet)])
 
 print(one_hot_to_text(predicted_text, alphabet))
 print(one_hot_to_text(y, alphabet))
-model.save("./model-lstm.banaan")
+# model.save("./model-lstm.banaan")
 
 print(alphabet_frequency(one_hot_to_text(predicted_text, alphabet), alphabet))
 print(alphabet_frequency(one_hot_to_text(y, alphabet), alphabet))
 
-plt.plot(np.log(history.history['loss']))
-plt.show()
+# plt.plot(np.log(history.history['loss']))
+# plt.show()
 
