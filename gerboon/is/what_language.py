@@ -24,17 +24,21 @@ def split_pad_text(text):
     return text
 
 
-with open("./cool/nederlands_bier", "r") as f:
+with open("./cool/jules_verne.txt", "r") as f:
     dutch_words = filter_text(f.read())
     d_alphabet = set(dutch_words)
     dutch_words = split_pad_text(dutch_words)
 
-with open("./cool/duits_bier", "r") as f:
+with open("./cool/verwandlung", "r") as f:
     german_words = filter_text(f.read())
     g_alphabet = set(german_words)
     german_words = split_pad_text(german_words)
 
-alphabet = list(g_alphabet | d_alphabet)
+# WARNING: this is not deterministic:
+alphabet = sorted(list(g_alphabet | d_alphabet))
+
+#alphabet = ['e', 'y', 'f', 's', 'o', 'r', 'n', 'p', '0', 'j', 'k', '1', 'd', '8', 'i', 'c', '6', '2', 'b', 'w', 'z', ' ', '5', 'v', 't', 'u', 'x', 'h', '4', 'q', 'g', 'l', '3', '7', 'a', '9', 'm']
+print(alphabet)
 
 x = np.array([text_to_one_hot(word, alphabet) for word in german_words + dutch_words])
 dutch_y = np.concatenate([np.zeros([len(dutch_words), 1]), np.zeros([len(dutch_words), 1]) + 1], axis=1)
@@ -46,7 +50,8 @@ x, y = unison_shuffled_copies(x, y)
 
 if not load_model:
     model = ks.models.Sequential()
-    model.add(ks.layers.LSTM(5, input_shape=(word_length, len(alphabet))))
+    model.add(ks.layers.LSTM(32, input_shape=(word_length, len(alphabet))))
+    model.add(ks.layers.Dense(32, activation=ks.activations.tanh))
     model.add(ks.layers.Dense(2, activation=ks.activations.softmax))
     model.compile(optimizer=ks.optimizers.Adam(lr=0.003), loss=ks.losses.categorical_crossentropy)
 else:
@@ -67,8 +72,7 @@ save_file_path = "best_model_%d.hdf5" % time.time()
 checkpoint = ModelCheckpoint(save_file_path, monitor='loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
 
-history = model.fit(x, y, epochs=200, batch_size=512, callbacks=callbacks_list)
-model.save("./model-talen.banaan")
+history = model.fit(x, y, epochs=100, batch_size=512, callbacks=callbacks_list)
 
 plt.plot(np.log(history.history['loss']))
 plt.show()
