@@ -38,11 +38,6 @@ file_path = "../sources/temp.txt"
 raw_text = open(file_path).read()
 raw_text = raw_text.lower()
 print(raw_text)
-# alphabet = ""
-# for c in raw_text:
-#     if c not in alphabet:
-#         alphabet += c
-#         print(alphabet)
 
 alphabet = sorted(list(set(raw_text)))
 
@@ -51,7 +46,7 @@ n_input_chars = 10
 # load the network weights
 filename = "weights-improvement-58-0.0396.hdf5"
 model = ks.models.load_model(filename)
-model.compile(loss='categorical_crossentropy', optimizer='adam')
+model.compile(loss=ks.losses.categorical_crossentropy, optimizer=ks.optimizers.Adam(lr=0.001))
 
 # summarize the loaded data
 n_chars = len(raw_text)

@@ -3,9 +3,8 @@ import keras as ks
 import matplotlib.pyplot as plt
 from keras.callbacks import ModelCheckpoint
 
-
 # load ascii text and covert to lowercase
-file_path = "../sources/temp.txt"
+file_path = "../../../sources/other/temp.txt"
 raw_text = open(file_path).read()
 raw_text = raw_text.lower()
 

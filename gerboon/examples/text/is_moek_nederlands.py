@@ -31,7 +31,7 @@ model = ks.models.load_model(files[n])
 #alphabet = ['e', 'y', 'f', 's', 'o', 'r', 'n', 'p', '0', 'j', 'k', '1', 'd', '8', 'i', 'c', '6', '2', 'b', 'w', 'z', ' ', '5', 'v', 't', 'u', 'x', 'h', '4', 'q', 'g', 'l', '3', '7', 'a', '9', 'm']
 alphabet = [' ', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 
-with open('./cool/temp.txt', 'r') as f:
+with open('../../../sources/other/temp.txt', 'r') as f:
     words = filter_text(f.read())
     words = split_pad_text(words)
 

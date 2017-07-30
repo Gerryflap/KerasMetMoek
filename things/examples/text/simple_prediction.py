@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 load = True
 n_input_chars = 15
 #text = "abababababababababababababab"
-#text = "Hallo, je wist het waarschijnlijk al: ik ben een banaan. Je zult je wellicht afvragen, wat doet een banaan zoal? Bananen zijn voornamelijk bezig met liggen of hangen. Er zijn echter situaties waar een banaan opgegeten wordt of opgegeten is. Dat is wat een banaan doet."
+#text = "Hallo, je wist het waarschijnlijk al: ik ben een banaan. Je zult je wellicht afvragen, wat doet een banaan zoal? Bananen zijn voornamelijk bezig met liggen of hangen. Er zijn echter situaties waar een banaan opgegeten wordt of opgegeten examples. Dat examples wat een banaan doet."
 with open('text', 'r') as f:
     text = f.read()
 text = text.lower()
