@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras.callbacks import ModelCheckpoint
 import os
+import codecs
 
 load_model = input("Load model? (y/N)") == "y"
 word_length = 20
@@ -22,18 +23,17 @@ def split_pad_text(text):
 
     return text
 
-
-with open("../../../sources/books/jules_verne.txt", "r") as f:
-    dutch_words = filter_text(f.read())
-    d_alphabet = set(dutch_words)
-    print("d_alphabet: " , sorted(list(d_alphabet)))
-    dutch_words = split_pad_text(dutch_words)
-
-with open("../../../sources/books/verwandlung", "r") as f:
+with codecs.open("../../../sources/books/verwandlung", "r", encoding='utf-8') as f:
     german_words = filter_text(f.read())
     g_alphabet = set(german_words)
     print("g_alphabet: " , sorted(list(g_alphabet)))
     german_words = split_pad_text(german_words)
+
+with codecs.open("../../../sources/books/jules_verne.txt", "r", encoding='utf-8') as f:
+    dutch_words = filter_text(f.read())
+    d_alphabet = set(dutch_words)
+    print("d_alphabet: " , sorted(list(d_alphabet)))
+    dutch_words = split_pad_text(dutch_words)
 
 alphabet = sorted(list(g_alphabet | d_alphabet))
 
