@@ -49,10 +49,11 @@ x, y = unison_shuffled_copies(x, y)
 
 if not load_model:
     model = ks.models.Sequential()
-    model.add(ks.layers.LSTM(32, input_shape=(word_length, len(alphabet))))
-    model.add(ks.layers.Dense(32, activation=ks.activations.tanh))
+    model.add(ks.layers.LSTM(128, input_shape=(word_length, len(alphabet)), return_sequences=True))
+    model.add(ks.layers.LSTM(128))
+    model.add(ks.layers.Dense(128, activation=ks.activations.relu))
     model.add(ks.layers.Dense(2, activation=ks.activations.softmax))
-    model.compile(optimizer=ks.optimizers.Adam(lr=0.003), loss=ks.losses.categorical_crossentropy)
+    model.compile(optimizer=ks.optimizers.Adam(lr=0.0003), loss=ks.losses.categorical_crossentropy)
 else:
     files = os.listdir(".")
     print("Which model do you want?")
@@ -69,7 +70,7 @@ save_file_path = "best_model_%d.hdf5" % time.time()
 checkpoint = ModelCheckpoint(save_file_path, monitor='loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
 
-history = model.fit(x, y, epochs=100, batch_size=512, callbacks=callbacks_list)
+history = model.fit(x, y, epochs=10, batch_size=512, callbacks=callbacks_list)
 
 plt.plot(np.log(history.history['loss']))
 plt.show()
