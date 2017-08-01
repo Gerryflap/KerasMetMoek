@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from keras.callbacks import ModelCheckpoint
 
 # load ascii text and covert to lowercase
-file_path = "../../../sources/other/temp.txt"
+file_path = "../../../sources/other/kernfusie.txt"
 raw_text = open(file_path).read()
 raw_text = raw_text.lower()
 

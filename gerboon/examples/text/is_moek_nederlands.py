@@ -30,7 +30,7 @@ model = ks.models.load_model(files[n])
 
 alphabet = [' ', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'ß', 'ä', 'ö', 'ü']
 
-with open('../../../sources/other/temp.txt', 'r') as f:
+with open('../../../sources/other/kernfusie.txt', 'r') as f:
     words = filter_text(f.read())
     words = split_pad_text(words)
 

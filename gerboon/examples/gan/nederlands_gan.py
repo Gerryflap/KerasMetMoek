@@ -21,7 +21,7 @@ def split_pad_text(text):
     return text
 
 
-with codecs.open("../../../sources/other/temp.txt", "r", encoding='utf-8') as f:
+with codecs.open("../../../sources/other/kernfusie.txt", "r", encoding='utf-8') as f:
     dutch_words = filter_text(f.read())
     alphabet = set(dutch_words)
     dutch_words = split_pad_text(dutch_words)

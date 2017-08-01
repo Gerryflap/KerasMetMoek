@@ -34,7 +34,7 @@ def alphabet_frequency(string, alphabet):
 
 
 # load ascii text and covert to lowercase
-file_path = "../sources/temp.txt"
+file_path = "../sources/kernfusie.txt"
 raw_text = open(file_path).read()
 raw_text = raw_text.lower()
 print(raw_text)
