@@ -70,10 +70,10 @@ save_file_path = "best_model_%d.hdf5" % time.time()
 checkpoint = ModelCheckpoint(save_file_path, monitor='loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
 
-history = model.fit(x, y, epochs=10, batch_size=512, callbacks=callbacks_list)
+#history = model.fit(x, y, epochs=10, batch_size=512, callbacks=callbacks_list)
 
-plt.plot(np.log(history.history['loss']))
-plt.show()
+#plt.plot(np.log(history.history['loss']))
+#plt.show()
 
 while True:
     input_word = input("Give a word (or multiple words split with spaces): ")

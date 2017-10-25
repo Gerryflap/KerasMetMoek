@@ -2,25 +2,32 @@ import random
 
 import keras as ks
 import numpy as np
-import gym
+from ple.games.snake import Snake
+from ple import PLE
 
 # -- Environment Setup --
 # Setup openAI environment. This is the environment that the agent will interact with
 import time
 
-env = gym.make('CartPole-v0')
+env = Snake(width=32, height=32)
+p = PLE(env, fps=60, display_screen=True)
+p.init()
 env.reset()
-print(env.action_space)
+print(p.getActionSet(), type(p.getActionSet()))
+action_space = p.getActionSet()[:]
 
 # -- Model Setup --
 model = ks.models.Sequential()
 
 # This environment has 4 input values
-model.add(ks.layers.Dense(5, input_dim=4, activation=ks.activations.relu))
+model.add(ks.layers.Conv2D(4, 5, activation=ks.activations.relu, input_shape=(32,32,3)))
+model.add(ks.layers.Conv2D(5, 5, activation=ks.activations.relu, strides=2))
+model.add(ks.layers.Conv2D(6, 5, activation=ks.activations.relu, strides=2))
+model.add(ks.layers.Flatten())
 model.add(ks.layers.Dense(20, activation=ks.activations.relu))
 
 # The environment requires 2 output values. These are linear values, because they model the expected future reward
-model.add(ks.layers.Dense(2, activation=ks.activations.linear))
+model.add(ks.layers.Dense(4, activation=ks.activations.linear))
 model.compile(optimizer=ks.optimizers.Adam(lr=0.0001), loss=ks.losses.mean_squared_error)
 
 
@@ -28,7 +35,7 @@ model.compile(optimizer=ks.optimizers.Adam(lr=0.0001), loss=ks.losses.mean_squar
 
 def get_next_action(state, exploration_rate=0.5):
     if random.random() < exploration_rate:
-        return random.randint(0, 1)
+        return random.randint(0, 3)
     q_values = model.predict(np.array([state]))
     # Return the action with the highest predicted score
     return int(np.argmax(q_values, axis=1)[0])
@@ -42,37 +49,36 @@ def single_run(render=False, exploration_rate=0.5):
     :return: Score and Replay memory consisting of (state, action, next_state, reward)
     """
     env.reset()
-    done = False
     replay_memory = []
     state = None
     score = 0
 
     # Start with a random move
-    action = env.action_space.sample()
-    while not done:
+    action = 0
+    action_code = action_space[action]
+    p.display_screen = render
+    while not p.game_over():
         previous_state = state
-        state, reward, done, info = env.step(action)
-        if render:
-            env.render()
-            time.sleep(1/60)
+        reward = p.act(action_code)
+        state = p.getScreenRGB()
         score += reward
-
-        # Add a large negative reward for failing, this seems to help
-        if done:
-            reward = -100
 
         # Reduce reward size to scale better with network output
         reward /= 10
+
+        if render:
+            time.sleep(1/60)
 
         if previous_state is not None:
             # Add relevant information to replay memory
             replay_memory.append((previous_state, action, state, reward))
         action = get_next_action(state, exploration_rate)
+        action_code = action_space[action]
 
     return score, replay_memory
 
 
-def generate_epoch(replay_memory, discount_factor=0.9, learning_rate=0.1):
+def generate_epoch(replay_memory, discount_factor=0.999, learning_rate=0.1):
     states, actions, next_states, rewards = zip(*replay_memory)
     states = np.array(states)
     actions = np.array(actions, dtype=np.int32)
@@ -84,7 +90,7 @@ def generate_epoch(replay_memory, discount_factor=0.9, learning_rate=0.1):
     old_next_states_Qs = np.max(model.predict(next_states), axis=1)
 
     # Calculate one-hot vectors for actions to select values in the Q-tables
-    actions_one_hot = np.zeros([len(actions), 2])
+    actions_one_hot = np.zeros([len(actions), 4])
     actions_one_hot[np.arange(len(actions_one_hot)), actions] = 1
 
     # - Apply Q Update Function. -
@@ -107,12 +113,14 @@ def generate_epoch(replay_memory, discount_factor=0.9, learning_rate=0.1):
 
 # -- Main Training Loop --
 
-for i in range(10000):
-    score, memory = single_run(exploration_rate=0.9/(i//1000 + 1))
-    print("Score: ", score)
-    for j in range(10):
-        x, y = generate_epoch(memory, discount_factor=0.8, learning_rate=0.01)
-        model.fit(x, y, epochs=1, batch_size=32, verbose=0)
+for i in range(100000):
+    exploration_rate = 0.9/(i/100 + 1)
+    score, memory = single_run(exploration_rate=exploration_rate)
+    print("Run: %d\tScore: %d\tExp_rate: %3f" % (i, score, exploration_rate))
+    for j in range(30):
+        x, y = generate_epoch(memory, discount_factor=0.9, learning_rate=0.03)
+        model.fit(x, y, epochs=1, batch_size=256, verbose=0)
+        print(np.average(y))
 
-    if i%100 == 0:
-        single_run(True, exploration_rate=0)
+    if i%10 == 0:
+        single_run(True, exploration_rate=0.1)

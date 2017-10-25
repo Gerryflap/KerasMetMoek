@@ -2,8 +2,8 @@ import keras as ks
 import numpy as np
 
 model = ks.models.Sequential()
-model.add(ks.layers.Dense(4, input_dim=2, activation=ks.activations.tanh))
-model.add(ks.layers.Dense(1, activation=ks.activations.linear))
+model.add(ks.layers.Dense(40, input_dim=2, activation=ks.activations.sigmoid))
+model.add(ks.layers.Dense(1, activation=ks.activations.sigmoid))
 
 model.compile(loss=ks.losses.mean_squared_error, optimizer=ks.optimizers.Adam(0.01))
 
