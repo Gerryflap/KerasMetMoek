@@ -16,7 +16,7 @@ print(env.action_space)
 model = ks.models.Sequential()
 
 # This environment has 4 input values
-model.add(ks.layers.Dense(5, input_dim=4, activation=ks.activations.relu))
+model.add(ks.layers.Dense(200, input_dim=4, activation=ks.activations.relu))
 model.add(ks.layers.Dense(200, activation=ks.activations.relu))
 model.add(ks.layers.Dense(200, activation=ks.activations.relu))
 model.add(ks.layers.Dense(20, activation=ks.activations.relu))

@@ -8,7 +8,7 @@ import gym
 # Setup openAI environment. This is the environment that the agent will interact with
 import time
 
-env = gym.make('MountainCar-v0')
+env = gym.make('LunarLander-v2')
 env.reset()
 print(env.action_space)
 
@@ -16,13 +16,13 @@ print(env.action_space)
 model = ks.models.Sequential()
 
 # This environment has 4 input values
-model.add(ks.layers.Dense(200, input_dim=2, activation=ks.activations.relu))
+model.add(ks.layers.Dense(200, input_dim=8, activation=ks.activations.relu))
 model.add(ks.layers.Dense(200, activation=ks.activations.relu))
 model.add(ks.layers.Dense(200, activation=ks.activations.relu))
-model.add(ks.layers.Dense(20, activation=ks.activations.relu))
+model.add(ks.layers.Dense(100, activation=ks.activations.relu))
 
 # The environment requires 2 output values. These are linear values, because they model the expected future reward
-model.add(ks.layers.Dense(2, activation=ks.activations.linear))
+model.add(ks.layers.Dense(4, activation=ks.activations.linear))
 model.compile(optimizer=ks.optimizers.RMSprop(lr=0.0001), loss=ks.losses.mean_squared_error)
 
 
@@ -38,11 +38,12 @@ def get_next_action(state, exploration_rate=0.5):
         r = random.randint(0, 1)
 
         # Use the current policy as probabilities of choosing an action
-        if r < softmax(model.predict(np.array([state]))[0])[0]:
-            return 0
-        else:
-            return 1
+        cumulative_pr = 0
+        for a, pr in enumerate(softmax(model.predict(np.array([state]))[0])):
+            cumulative_pr += pr
 
+            if r < cumulative_pr:
+                return a
 
     q_values = model.predict(np.array([state]))
     # Return the action with the highest predicted score
@@ -72,11 +73,10 @@ def single_run(render=False, exploration_rate=0.5):
             time.sleep(1/60)
         score += reward
 
-        # Add a large negative reward for failing, this seems to help
+        # Detect whether it's a terminal state
         terminal = False
         if done:
             terminal = True
-            reward = -10
 
         # Reduce reward size to scale better with network output
         reward /= 10
@@ -102,7 +102,7 @@ def generate_epoch(model, replay_memory, discount_factor=0.9, learning_rate=0.1)
     actions = np.array(actions, dtype=np.int32)
     rewards = np.array(rewards)
     terminal = np.array(terminal, dtype=np.bool)
-    actions_oh = np.diag([1., 1.])[actions] == 1.
+    actions_oh = np.diag([1., 1., 1., 1.])[actions] == 1.
 
     q_values = model.predict(states)
     print("Before: ", np.mean(q_values))
@@ -133,9 +133,9 @@ for i in range(10000):
     score, memory = single_run(exploration_rate=0.9/(i/1000 + 1))
     print("Score: ", score)
     replay_memory += memory
-    if len(replay_memory) > 1500:
-        for j in range(10):
-            x, y = generate_epoch(model, replay_memory, discount_factor=0.8, learning_rate=1.0)
+    if len(replay_memory) > 2500:
+        for j in range(3):
+            x, y = generate_epoch(model, replay_memory, discount_factor=0.99, learning_rate=1.0)
             model.fit(x, y, epochs=1, batch_size=32, verbose=0)
         replay_memory = []
 
