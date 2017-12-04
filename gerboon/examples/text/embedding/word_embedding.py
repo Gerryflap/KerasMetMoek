@@ -95,7 +95,8 @@ def batch_generator(words_oh, targets_oh, negs_oh, batch_size=10):
                 target = targets_oh[i, random.randint(0, targets_oh.shape[1]-1)]
                 y = 1
             else:
-                target = negs_oh[i, random.randint(0, negs_oh.shape[1]-1)]
+                target = targets_oh[random.randint(0, targets_oh.shape[0]-1), random.randint(0, targets_oh.shape[1]-1)]
+                #target = negs_oh[i, random.randint(0, negs_oh.shape[1]-1)]
                 y = 0
             word = words_oh[i]
             batch_words.append(word)
@@ -109,7 +110,7 @@ def batch_generator(words_oh, targets_oh, negs_oh, batch_size=10):
 input_word = ks.Input((word_length, len(alphabet)))
 input_target = ks.Input((word_length, len(alphabet)))
 
-word_to_vec = ks.layers.LSTM(10, return_sequences=False)
+word_to_vec = ks.layers.LSTM(5, return_sequences=False)
 
 word_vec = word_to_vec(input_word)
 target_vec = word_to_vec(input_target)
@@ -125,10 +126,15 @@ vector_predictor.compile(ks.optimizers.Adam(0.001), ks.losses.binary_crossentrop
 # End model definition
 
 
-words_oh, targets_oh, negs_oh, words = generate_one_hots(data, target_window=5, negative_targets=10)
+words_oh, targets_oh, negs_oh, words = generate_one_hots(data, target_window=5, negative_targets=30)
 #words_oh, targets_oh, negs_oh, words = generate_one_hots(data, target_window=2, negative_targets=4)
 #print(np.argmax(words_oh, axis=2))
-model.fit_generator(batch_generator(words_oh, targets_oh, negs_oh, batch_size=2), steps_per_epoch=30, epochs=10)
+try:
+    model.fit_generator(batch_generator(words_oh, targets_oh, negs_oh, batch_size=2), steps_per_epoch=30, epochs=100)
+except KeyboardInterrupt:
+    print("Training stopped")
+    pass
+
 
 preds = vector_predictor.predict(words_oh)
 

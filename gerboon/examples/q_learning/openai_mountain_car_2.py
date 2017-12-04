@@ -8,7 +8,7 @@ import gym
 # Setup openAI environment. This is the environment that the agent will interact with
 import time
 
-env = gym.make('CartPole-v0')
+env = gym.make('MountainCar-v0')
 env.reset()
 print(env.action_space)
 
@@ -16,7 +16,7 @@ print(env.action_space)
 model = ks.models.Sequential()
 
 # This environment has 4 input values
-model.add(ks.layers.Dense(5, input_dim=4, activation=ks.activations.relu))
+model.add(ks.layers.Dense(5, input_dim=2, activation=ks.activations.relu))
 model.add(ks.layers.Dense(200, activation=ks.activations.relu))
 model.add(ks.layers.Dense(200, activation=ks.activations.relu))
 model.add(ks.layers.Dense(20, activation=ks.activations.relu))
@@ -66,7 +66,7 @@ def single_run(render=False, exploration_rate=0.5):
             reward = -10
 
         # Reduce reward size to scale better with network output
-        reward /= 10
+        reward /= 200
 
         if previous_state is not None:
             # Add relevant information to replay memory
