@@ -139,5 +139,5 @@ for i in range(10000):
             model.fit(x, y, epochs=1, batch_size=32, verbose=0)
         replay_memory = []
 
-    if i%100 == 0:
+    if i%1002 == 0:
         single_run(True, exploration_rate=0)

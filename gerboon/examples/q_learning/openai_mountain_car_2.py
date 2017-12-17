@@ -23,7 +23,7 @@ model.add(ks.layers.Dense(20, activation=ks.activations.relu))
 
 # The environment requires 2 output values. These are linear values, because they model the expected future reward
 model.add(ks.layers.Dense(2, activation=ks.activations.linear))
-model.compile(optimizer=ks.optimizers.RMSprop(lr=0.0001), loss=ks.losses.mean_squared_error)
+model.compile(optimizer=ks.optimizers.RMSprop(lr=0.00001), loss=ks.losses.mean_squared_error)
 
 
 # -- Function Definitions --
@@ -61,6 +61,7 @@ def single_run(render=False, exploration_rate=0.5):
     replay_memory = []
     state = None
     score = 0
+    max_closeness = None
 
     # Start with a random move
     action = env.action_space.sample()
@@ -70,16 +71,21 @@ def single_run(render=False, exploration_rate=0.5):
         if render:
             env.render()
             time.sleep(1/60)
+
+        reward += state[0] * 10
         score += reward
+
 
         # Add a large negative reward for failing, this seems to help
         terminal = False
         if done:
             terminal = True
-            reward = -10
+
+            print("Final reward: ", reward)
+            max_closeness = None
 
         # Reduce reward size to scale better with network output
-        reward /= 10
+        reward /= 100
 
         if previous_state is not None:
             # Add relevant information to replay memory
@@ -135,9 +141,9 @@ for i in range(10000):
     replay_memory += memory
     if len(replay_memory) > 1500:
         for j in range(10):
-            x, y = generate_epoch(model, replay_memory, discount_factor=0.8, learning_rate=1.0)
+            x, y = generate_epoch(model, replay_memory, discount_factor=1.0, learning_rate=1.0)
             model.fit(x, y, epochs=1, batch_size=32, verbose=0)
         replay_memory = []
 
-    if i%100 == 0:
+    if i%30 == 0:
         single_run(True, exploration_rate=0)
