@@ -18,7 +18,7 @@ models = {}
 
 # Model 1, wide 13x10000 + 10000 = 140000 weights
 model = ks.models.Sequential()
-model.add(ks.layers.Dense(10000, input_shape=(13,), activation='elu'))
+model.add(ks.layers.Dense(100000, input_shape=(13,), activation='elu'))
 model.add(ks.layers.Dense(1, activation='linear'))
 
 models["wide"] = model
@@ -59,17 +59,60 @@ model.add(ks.layers.Dense(1, activation='linear'))
 
 models["very_deep"] = model
 
+# Model 5, ME ME BIG BOI:
+model = ks.models.Sequential()
+model.add(ks.layers.Dense(3000, input_shape=(13,), activation='elu'))
+model.add(ks.layers.Dense(2000,  activation='elu'))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dense(500,  activation='elu'))
+model.add(ks.layers.Dense(500,  activation='elu'))
+model.add(ks.layers.Dense(300,  activation='elu'))
+model.add(ks.layers.Dense(1, activation='linear'))
+
+#models["BIG_BOI"] = model
+
+# Model 6, very_deep, dropout, veel weights, MEER LAYERS:
+dr = 0
+model = ks.models.Sequential()
+model.add(ks.layers.Dense(2000, input_shape=(13,), activation='elu'))
+model.add(ks.layers.Dropout(dr))
+model.add(ks.layers.Dense(2000,  activation='elu'))
+model.add(ks.layers.Dropout(dr))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dropout(dr))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dropout(dr))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dropout(dr))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dropout(dr))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dropout(dr))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dropout(dr))
+model.add(ks.layers.Dense(1000,  activation='elu'))
+model.add(ks.layers.Dropout(dr))
+model.add(ks.layers.Dense(1, activation='linear'))
+
+models["very_deep_drop"] = model
+
+
 performance = {}
 training_mse = {}
 for name, model in models.items():
     # Compile the model
-    model.compile(optimizer=ks.optimizers.Adam(0.0001), loss=ks.losses.mean_squared_error, metrics=[ks.losses.mean_absolute_error])
+    model.compile(optimizer=ks.optimizers.Adam(0.0003), loss=ks.losses.mean_squared_error, metrics=[ks.losses.mean_absolute_error])
 
     print("Training model ", name)
-    h = model.fit(x_train, y_train, epochs=100)
+    h = model.fit(x_train, y_train, epochs=100, validation_data=(x_test, y_test))
     print("Training done for model ", name)
 
-    training_mse[name] = h.history['loss']
+    training_mse[name] = h.history['val_loss']
     performance[name] = model.evaluate(x_test, y_test)
 
 

@@ -2,13 +2,13 @@ import random
 
 import keras as ks
 import numpy as np
-import gym
-
 # -- Environment Setup --
 # Setup openAI environment. This is the environment that the agent will interact with
 import time
 
-env = gym.make('LunarLander-v2')
+from gerboon.examples.q_learning.soccer_env.soccer_env import SoccerEnvironment
+
+env = SoccerEnvironment()
 env.reset()
 print(env.action_space)
 
@@ -16,13 +16,17 @@ print(env.action_space)
 model = ks.models.Sequential()
 
 # This environment has 4 input values
-model.add(ks.layers.Dense(200, input_dim=8, activation=ks.activations.relu))
-model.add(ks.layers.Dense(200, activation=ks.activations.relu))
-model.add(ks.layers.Dense(200, activation=ks.activations.relu))
-model.add(ks.layers.Dense(100, activation=ks.activations.relu))
+model.add(ks.layers.Dense(200, input_dim=12, activation=ks.activations.elu))
+model.add(ks.layers.Dense(100, activation=ks.activations.elu))
+model.add(ks.layers.Dense(100, activation=ks.activations.elu))
+model.add(ks.layers.Dense(50, activation=ks.activations.elu))
+model.add(ks.layers.Dense(50, activation=ks.activations.elu))
+model.add(ks.layers.Dense(30, activation=ks.activations.elu))
+model.add(ks.layers.Dense(30, activation=ks.activations.elu))
+model.add(ks.layers.Dense(20, activation=ks.activations.elu))
 
-# The environment requires 4 output values. These are linear values, because they model the expected future reward
-model.add(ks.layers.Dense(4, activation=ks.activations.linear))
+# The environment requires 5 output values. These are linear values, because they model the expected future reward
+model.add(ks.layers.Dense(5, activation=ks.activations.linear))
 model.compile(optimizer=ks.optimizers.RMSprop(lr=0.0001), loss=ks.losses.mean_squared_error)
 
 
@@ -61,13 +65,19 @@ def single_run(render=False, exploration_rate=0.5):
     done = False
     replay_memory = []
     state = None
+    s2 = None
     score = 0
 
     # Start with a random move
-    action = env.action_space.sample()
+    action = env.action_space_sample()
+    a2 = env.action_space_sample()
     while not done:
         previous_state = state
-        state, reward, done, info = env.step(action)
+        previous_s2 = s2
+        state, reward, done, info = env.step(action, a2)
+        state, s2 = state
+        reward, r2 = reward
+
         if render:
             env.render()
             time.sleep(1/60)
@@ -78,13 +88,17 @@ def single_run(render=False, exploration_rate=0.5):
         if done:
             terminal = True
 
-        # Reduce reward size to scale better with network output
-        reward /= 10
 
         if previous_state is not None:
             # Add relevant information to replay memory
             replay_memory.append((previous_state, action, state, reward, terminal))
+            replay_memory.append((previous_s2, a2, s2, r2, terminal))
         action = get_next_action(state, exploration_rate)
+        a2 = get_next_action(s2, 0.1)
+        if a2 == 0:
+            a2 = 2
+        elif a2 == 2:
+            a2 = 0
 
     return score, replay_memory
 
@@ -102,7 +116,7 @@ def generate_epoch(model, replay_memory, discount_factor=0.9, learning_rate=0.1)
     actions = np.array(actions, dtype=np.int32)
     rewards = np.array(rewards)
     terminal = np.array(terminal, dtype=np.bool)
-    actions_oh = np.diag([1., 1., 1., 1.])[actions] == 1.
+    actions_oh = np.diag([1., 1., 1., 1., 1.])[actions] == 1.
 
     q_values = model.predict(states)
     print("Before: ", np.mean(q_values))
@@ -128,8 +142,8 @@ def generate_epoch(model, replay_memory, discount_factor=0.9, learning_rate=0.1)
 # -- Main Training Loop --
 
 replay_memory = []
-for i in range(10000):
-    print(0.9/(i/1000 + 1))
+for i in range(100000):
+    print(0.9/(i/100 + 1))
     score, memory = single_run(exploration_rate=0.9/(i/1000 + 1))
     print("Score: ", score)
     replay_memory += memory
@@ -139,5 +153,5 @@ for i in range(10000):
             model.fit(x, y, epochs=1, batch_size=32, verbose=0)
         replay_memory = []
 
-    if i%1002 == 0:
+    if i%10 == 0:
         single_run(True, exploration_rate=0)

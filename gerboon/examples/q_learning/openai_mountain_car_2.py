@@ -35,7 +35,7 @@ def softmax(x):
 
 def get_next_action(state, exploration_rate=0.5):
     if random.random() < exploration_rate:
-        r = random.randint(0, 1)
+        r = random.random()
 
         # Use the current policy as probabilities of choosing an action
         if r < softmax(model.predict(np.array([state]))[0])[0]:
