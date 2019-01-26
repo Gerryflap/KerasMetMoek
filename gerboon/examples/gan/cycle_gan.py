@@ -6,13 +6,12 @@ import numpy as np
 from util.math import unison_shuffled_copies
 from util.text import filter_text, text_to_one_hot, one_hot_to_text
 
-word_length = 15
+word_length = 8
 
 
-def split_pad_text(text):
-    text = text.split(" ")
+def pad_text(text):
     for i in range(len(text)):
-        if len(text[i]) > word_length:
+        if len(text[i]) == word_length:
             text[i] = text[i][:word_length]
         elif len(text[i]) < word_length:
             text[i] += " " * (word_length - len(text[i]))
@@ -23,15 +22,20 @@ def split_pad_text(text):
 with codecs.open("../../../sources/books/jules_verne.txt", "r", encoding='utf-8') as f:
     dutch_words = filter_text(f.read())
     d_alphabet = set(dutch_words)
-    dutch_words = split_pad_text(dutch_words)
-    dutch_words = [word for word in set(dutch_words) if word[0] != " "]
+    dutch_words = dutch_words.split(" ")
+    dutch_words = pad_text(list({word for word in dutch_words if len(word) < word_length}))
+    dutch_words = [word for word in dutch_words if word[0] != " "]
 
 with codecs.open("../../../sources/books/verwandlung", "r", encoding='utf-8') as f:
     german_words = filter_text(f.read())
     g_alphabet = set(german_words)
+    german_words = german_words.split(" ")
     print("g_alphabet: " , sorted(list(g_alphabet)))
-    german_words = split_pad_text(german_words)
-    german_words = [word for word in set(german_words) if word[0] != " "]
+    german_words = pad_text(list({word for word in german_words if len(word) < word_length}))
+    german_words = [word for word in german_words if word[0] != " "]
+
+print("Length of German words: ", len(german_words))
+print("Length of Dutch words: ", len(dutch_words))
 
 alphabet = sorted(list(d_alphabet | g_alphabet))
 
@@ -51,10 +55,12 @@ def build_single_generator_model():
     inp = ks.Input(shape=(word_length, len(alphabet)))
     x = ks.layers.Bidirectional(ks.layers.GRU(128, return_sequences=True), input_shape=(word_length, len(alphabet)))(inp)
     # For a bottleneck: x = ks.layers.RepeatVector(word_length,)(x)
-    #x = ks.layers.Bidirectional(ks.layers.GRU(32, return_sequences=True))(x)
+    x = ks.layers.Bidirectional(ks.layers.GRU(128, return_sequences=True))(x)
     x = ks.layers.Bidirectional(ks.layers.GRU(128, return_sequences=True))(x)
     x = ks.layers.Concatenate(axis=2)([inp, x])
-    out = ks.layers.TimeDistributed(ks.layers.Dense(len(alphabet), activation='softmax'))(x)
+
+    out =  ks.layers.Bidirectional(ks.layers.GRU(len(alphabet), activation='softmax', return_sequences=True), merge_mode='sum')(x)
+    # out = ks.layers.TimeDistributed(ks.layers.Dense(len(alphabet), activation='softmax'))(x)
     model = ks.Model(inputs=inp, outputs=out)
     return model
 
@@ -81,8 +87,8 @@ G_german_dutch = build_single_generator_model()
 D_dutch = build_single_discriminator_model()
 D_german = build_single_discriminator_model()
 
-D_dutch.compile(ks.optimizers.Adam(0.001), loss=ks.losses.binary_crossentropy)
-D_german.compile(ks.optimizers.Adam(0.001), loss=ks.losses.binary_crossentropy)
+D_dutch.compile(ks.optimizers.Adam(0.003), loss=ks.losses.binary_crossentropy)
+D_german.compile(ks.optimizers.Adam(0.003), loss=ks.losses.binary_crossentropy)
 
 # Define Dutch -> German -> Dutch cycle model
 dutch_input = ks.Input(shape=(word_length, len(alphabet)))
@@ -92,7 +98,7 @@ discriminator_german_pred = D_german(generated_german)
 dutch_cycle_out = G_german_dutch(generated_german)
 
 dutch_cycle_model = ks.Model(inputs=dutch_input, outputs=[discriminator_german_pred, dutch_cycle_out])
-dutch_cycle_model.compile(ks.optimizers.Adam(0.001), loss=[ks.losses.binary_crossentropy, ks.losses.categorical_crossentropy])
+dutch_cycle_model.compile(ks.optimizers.Adam(0.003), loss=[ks.losses.binary_crossentropy, ks.losses.categorical_crossentropy])
 
 # Define German -> Dutch -> German cycle model
 german_input = ks.Input(shape=(word_length, len(alphabet)))
@@ -102,7 +108,7 @@ discriminator_dutch_pred = D_dutch(generated_dutch)
 german_cycle_out = G_dutch_german(generated_dutch)
 
 german_cycle_model = ks.Model(inputs=german_input, outputs=[discriminator_dutch_pred, german_cycle_out])
-german_cycle_model.compile(ks.optimizers.Adam(0.001), loss=[ks.losses.binary_crossentropy, ks.losses.categorical_crossentropy])
+german_cycle_model.compile(ks.optimizers.Adam(0.003), loss=[ks.losses.binary_crossentropy, ks.losses.categorical_crossentropy])
 
 # Training Loop:
 epochs = 100000
@@ -110,6 +116,9 @@ batch_size = 32
 
 G_batches_per_epoch = 2
 D_batches_per_epoch = 1
+
+real_dutch_fixed = sample_random(words_one_hot_dutch, 5)
+real_german_fixed = sample_random(words_one_hot_german, 5)
 
 for i in range(epochs):
 
@@ -145,40 +154,39 @@ for i in range(epochs):
 
     # Show results
     if i%10 == 0:
-        real_dutch = sample_random(words_one_hot_dutch, 5)
-        real_german = sample_random(words_one_hot_german, 5)
 
-        predicted_german = G_dutch_german.predict(real_dutch)
-        predicted_dutch = G_german_dutch.predict(real_german)
+
+        predicted_german = G_dutch_german.predict(real_dutch_fixed)
+        predicted_dutch = G_german_dutch.predict(real_german_fixed)
 
         print("Real German" , "->",  "Predicted Dutch")
 
-        for oh_g, oh_d in zip(real_german, predicted_dutch):
+        for oh_g, oh_d in zip(real_german_fixed, predicted_dutch):
             print(one_hot_to_text(oh_g, alphabet), "->", one_hot_to_text(oh_d, alphabet))
 
         print()
 
         print("Real Dutch", "->", "Predicted German")
 
-        for oh_d, oh_g in zip(real_dutch, predicted_german):
+        for oh_d, oh_g in zip(real_dutch_fixed, predicted_german):
             print(one_hot_to_text(oh_d, alphabet), "->", one_hot_to_text(oh_g, alphabet))
 
         print()
 
         print("Real German" , "->",  "Cycle German")
 
-        cycle_german = german_cycle_model.predict(real_german)[1]
+        cycle_german = german_cycle_model.predict(real_german_fixed)[1]
 
-        for oh_g, oh_gc in zip(real_german, cycle_german):
+        for oh_g, oh_gc in zip(real_german_fixed, cycle_german):
             print(one_hot_to_text(oh_g, alphabet), "->", one_hot_to_text(oh_gc, alphabet))
 
         print()
 
         print("Real Dutch" , "->",  "Cycle Dutch")
 
-        cycle_dutch = dutch_cycle_model.predict(real_dutch)[1]
+        cycle_dutch = dutch_cycle_model.predict(real_dutch_fixed)[1]
 
-        for oh_d, oh_dc in zip(real_dutch, cycle_dutch):
+        for oh_d, oh_dc in zip(real_dutch_fixed, cycle_dutch):
             print(one_hot_to_text(oh_d, alphabet), "->", one_hot_to_text(oh_dc, alphabet))
 
         print()
