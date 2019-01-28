@@ -3,21 +3,36 @@ import pygame
 import random
 
 
+def text_to_screen(screen, text, x, y, size = 10,
+            color = (200, 200, 200), font_type = 'Cantarell'):
+    try:
+
+        text = str(text)
+        font = pygame.font.SysFont(font_type, size)
+        text = font.render(text, True, color)
+        screen.blit(text, (x, y))
+
+    except Exception as e:
+        print('Font Error, saw it coming')
+        raise e
+
+
 class SoccerEnvironment(object):
     action_space = 5
     width = 600
     height = 300
     circle_radius = 25
     resistance_factors = [1.02, 1.02, 1.01]
-    acceleration = 1
-    bounce_resistance = [2,2,2]
+    acceleration = 0.5
+    bounce_resistance = [1.1,1.1,2]
     max_steps = 1000
     object_masses = [1, 1, 0.3]
 
-    def __init__(self, gui=True):
+    def __init__(self, gui=True, add_random=True):
         self.reset()
         pygame.init()
         self.screen = pygame.display.set_mode((self.width, self.height))
+        self.add_random = add_random
 
 
     def reset(self):
@@ -61,6 +76,12 @@ class SoccerEnvironment(object):
         x, y = self.ball_pos
         x, y = int(x), int(y)
         pygame.draw.circle(self.screen, (255, 255, 255), (x, y), self.circle_radius)
+        s = ""
+        for i, num in enumerate(self.__gen_state__()[0]):
+            s += "%2.2f " % num
+            if i % 2 == 1:
+                s += "|| "
+        text_to_screen(self.screen, s, 10, 250)
         pygame.display.flip()
 
     def __gen_state__(self):
@@ -74,16 +95,19 @@ class SoccerEnvironment(object):
             (self.ball_pos[0] - hw) / hw, (self.ball_pos[1] - hh) / hh,
             self.p1_speed[0], self.p1_speed[1],
             self.p2_speed[0], self.p2_speed[1],
-            self.ball_speed[0], self.ball_speed[1]
+            self.ball_speed[0], self.ball_speed[1],
         ])
         p2_state = p1_state[np.array([2,3,0,1,4,5,8,9,6,7,10,11], dtype=np.int32)]
-        xs = np.array([0, 2, 4], dtype=np.int32)
+        xs = np.array([0, 2, 4, 6, 8, 10], dtype=np.int32)
         p2_state[xs] = -p2_state[xs]
         p1_state[[2,4]] -= p1_state[0]
         p1_state[[3,5]] -= p1_state[1]
 
         p2_state[[2,4]] -= p2_state[0]
         p2_state[[3,5]] -= p2_state[1]
+        if self.add_random:
+            p1_state = np.concatenate((p1_state, np.random.normal(0, 1, (1,))), axis=0)
+            p2_state = np.concatenate((p2_state, np.random.normal(0, 1, (1,))), axis=0)
         return p1_state, p2_state
 
     def __run_physics__(self, objects):
@@ -168,14 +192,14 @@ class SoccerEnvironment(object):
         x, y = self.ball_pos
         if x > self.width:
             self.reset()
-            return (10, -10), True
+            return (1.0, -0.5), True
         x, y = self.ball_pos
         if x < 0:
             self.reset()
-            return (-10, 10), True
+            return (-0.5, 1.0), True
         if self.steps > self.max_steps:
             self.reset()
-            return (-5, -5), True
+            return (-1.0, -1.0), True
         r1 = 0
         r2 = 0
         if self.get_total_speed(self.p1_speed) < 0.1:
@@ -184,9 +208,9 @@ class SoccerEnvironment(object):
             r2 += 0
 
         if (0, 2) in collisions:
-            r1 += 0.5
+            r1 += 0
         if (1, 2) in collisions:
-            r2 += 0.5
+            r2 += 0
 
         return (r1, r2), False
 

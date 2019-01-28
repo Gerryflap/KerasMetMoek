@@ -12,23 +12,33 @@ env = SoccerEnvironment()
 env.reset()
 print(env.action_space)
 
+def my_initializer(shape, dtype=None):
+    z = np.zeros(shape, dtype)
+    print(shape)
+    z[12,:] = np.random.normal(0, 1, (1, shape[1]))
+    return ks.backend.constant(z, dtype=dtype)
+
 # -- Model Setup --
 model = ks.models.Sequential()
 
 # This environment has 4 input values
-model.add(ks.layers.Dense(200, input_dim=12, activation=ks.activations.elu))
-model.add(ks.layers.Dense(100, activation=ks.activations.elu))
-model.add(ks.layers.Dense(100, activation=ks.activations.elu))
+#model.add(ks.layers.Dropout(0.2, input_shape=(13,)))
+model.add(ks.layers.Dense(100, input_dim=13, activation=ks.activations.elu, kernel_initializer=my_initializer, bias_initializer=ks.initializers.zero()))
+#model.add(ks.layers.Dropout(0.5))
 model.add(ks.layers.Dense(50, activation=ks.activations.elu))
-model.add(ks.layers.Dense(50, activation=ks.activations.elu))
+#model.add(ks.layers.Dropout(0.3))
 model.add(ks.layers.Dense(30, activation=ks.activations.elu))
-model.add(ks.layers.Dense(30, activation=ks.activations.elu))
-model.add(ks.layers.Dense(20, activation=ks.activations.elu))
-
+#model.add(ks.layers.Dropout(0.2))
 # The environment requires 5 output values. These are linear values, because they model the expected future reward
 model.add(ks.layers.Dense(5, activation=ks.activations.linear))
 model.compile(optimizer=ks.optimizers.RMSprop(lr=0.0001), loss=ks.losses.mean_squared_error)
 
+
+def pick_random(l, n):
+    o = []
+    for i in range(n):
+        o.append(l[random.randint(0, len(l)-1)])
+    return o
 
 # -- Function Definitions --
 def softmax(x):
@@ -93,8 +103,8 @@ def single_run(render=False, exploration_rate=0.5):
             # Add relevant information to replay memory
             replay_memory.append((previous_state, action, state, reward, terminal))
             replay_memory.append((previous_s2, a2, s2, r2, terminal))
-        action = get_next_action(state, exploration_rate)
-        a2 = get_next_action(s2, 0.1)
+        action = get_next_action(state, 0.0)
+        a2 = get_next_action(s2, 0.0)
         if a2 == 0:
             a2 = 2
         elif a2 == 2:
@@ -142,15 +152,18 @@ def generate_epoch(model, replay_memory, discount_factor=0.9, learning_rate=0.1)
 # -- Main Training Loop --
 
 replay_memory = []
+lt_replay_mem = []
 for i in range(100000):
     print(0.9/(i/100 + 1))
     score, memory = single_run(exploration_rate=0.9/(i/1000 + 1))
     print("Score: ", score)
     replay_memory += memory
     if len(replay_memory) > 2500:
+        lt_replay_mem += replay_memory
         for j in range(3):
-            x, y = generate_epoch(model, replay_memory, discount_factor=0.99, learning_rate=1.0)
+            x, y = generate_epoch(model, replay_memory + pick_random(lt_replay_mem, 2500), discount_factor=0.99, learning_rate=1.0)
             model.fit(x, y, epochs=1, batch_size=32, verbose=0)
+
         replay_memory = []
 
     if i%10 == 0:
