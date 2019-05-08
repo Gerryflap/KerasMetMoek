@@ -39,10 +39,10 @@ def make_trainable(net, val):
         l.trainable = val
 
 # Build Generator
-gen_opt = ks.optimizers.Adam(0.002)
+gen_opt = ks.optimizers.Adam(0.00002)
 gen_model = ks.models.Sequential()
-gen_model.add(ks.layers.GRU(512, input_shape=(word_length, inputs), return_sequences=True))
-gen_model.add(ks.layers.GRU(512, return_sequences=True))
+gen_model.add(ks.layers.GRU(128, input_shape=(word_length, inputs), return_sequences=True))
+#gen_model.add(ks.layers.GRU(128, return_sequences=True))
 #gen_model.add(ks.layers.Dropout(0.5))
 gen_model.add(ks.layers.GRU(len(alphabet), return_sequences=True))
 #gen_model.add(ks.layers.Dropout(0.5))
@@ -50,10 +50,10 @@ gen_model.compile(optimizer=gen_opt, loss=ks.losses.binary_crossentropy)
 
 # Build Discriminator
 discr_model = ks.models.Sequential()
-discr_model.add(ks.layers.GRU(512, input_shape=(word_length, len(alphabet)), return_sequences=True))
-discr_model.add(ks.layers.GRU(512))
+discr_model.add(ks.layers.GRU(128, input_shape=(word_length, len(alphabet)), return_sequences=True))
+discr_model.add(ks.layers.GRU(128))
 discr_model.add(ks.layers.Dense(1, activation=ks.activations.sigmoid))
-discr_model.compile(optimizer=ks.optimizers.Adam(lr=0.0002), loss=ks.losses.binary_crossentropy)
+discr_model.compile(optimizer=ks.optimizers.Adam(lr=0.00001), loss=ks.losses.binary_crossentropy)
 
 # Build stacked model
 make_trainable(discr_model, False)
@@ -72,7 +72,7 @@ discr_model.fit(discr_x, discr_y, epochs=10, batch_size=256)
 
 epoch_size = 200
 
-for i in range(1000):
+for i in range(10000):
     # generate words
     noise = np.random.standard_normal([epoch_size // 2, word_length, inputs])
     words = gen_model.predict(noise)
@@ -89,14 +89,14 @@ for i in range(1000):
     x, y = unison_shuffled_copies(x, y)
 
     print("Training discriminative model")
-    discr_model.fit(x, y, epochs=10, batch_size=20, verbose=True)
+    discr_model.fit(x, y, epochs=1, batch_size=20, verbose=True)
 
     # Train stack
     noise = np.random.standard_normal([epoch_size, word_length, inputs])
     y = np.zeros([epoch_size, 1])
     y[:, 0] = 1.0
     print("Training stack")
-    gan.fit(noise, y, epochs=10, batch_size=20, verbose=True)
+    gan.fit(noise, y, epochs=1, batch_size=20, verbose=True)
 
     if i%10 == 0:
         pred = gen_model.predict(np.random.standard_normal([10,word_length,inputs]))
