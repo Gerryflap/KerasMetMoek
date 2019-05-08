@@ -41,17 +41,17 @@ def make_trainable(net, val):
 # Build Generator
 gen_opt = ks.optimizers.Adam(0.00002)
 gen_model = ks.models.Sequential()
-gen_model.add(ks.layers.GRU(128, input_shape=(word_length, inputs), return_sequences=True))
-#gen_model.add(ks.layers.GRU(128, return_sequences=True))
+gen_model.add(ks.layers.CuDNNGRU(128, input_shape=(word_length, inputs), return_sequences=True))
+#gen_model.add(ks.layers.CuDNNGRU(128, return_sequences=True))
 #gen_model.add(ks.layers.Dropout(0.5))
-gen_model.add(ks.layers.GRU(len(alphabet), return_sequences=True))
+gen_model.add(ks.layers.CuDNNGRU(len(alphabet), return_sequences=True))
 #gen_model.add(ks.layers.Dropout(0.5))
 gen_model.compile(optimizer=gen_opt, loss=ks.losses.binary_crossentropy)
 
 # Build Discriminator
 discr_model = ks.models.Sequential()
-discr_model.add(ks.layers.GRU(128, input_shape=(word_length, len(alphabet)), return_sequences=True))
-discr_model.add(ks.layers.GRU(128))
+discr_model.add(ks.layers.CuDNNGRU(128, input_shape=(word_length, len(alphabet)), return_sequences=True))
+discr_model.add(ks.layers.CuDNNGRU(128))
 discr_model.add(ks.layers.Dense(1, activation=ks.activations.sigmoid))
 discr_model.compile(optimizer=ks.optimizers.Adam(lr=0.00001), loss=ks.losses.binary_crossentropy)
 

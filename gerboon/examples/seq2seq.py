@@ -3,16 +3,16 @@ import keras as ks
 import keras.backend as K
 import matplotlib.pyplot as plt
 
-batch_size = 32
+batch_size = 128
 
 seq_len_in = 10
 seq_len_out = 100
 
 
 def generate_sines(start_angle, length):
-    xs = np.linspace(start_angle, start_angle + length / 10, length)
+    xs = np.linspace(start_angle, start_angle + length / 4, length)
     s1 = np.sin(xs)
-    s2 = np.sin((xs + 1) * 4.95)
+    s2 = np.sin((xs + 1) * 2)
     sout = s1 * s2
     return np.stack((s1, s2), axis=1), np.expand_dims(sout, axis=1)
 
@@ -94,8 +94,8 @@ def make_prediction(E, D, previous_timesteps_x, previous_y, n_output_timesteps):
 if __name__ == "__main__":
     encoder, decoder, encdecmodel = build_seq2seq_model()
 
-    encdecmodel.compile(ks.optimizers.Adam(0.001), ks.losses.mean_squared_error)
-    encdecmodel.fit_generator(gen_batch(), steps_per_epoch=500, epochs=3)
+    encdecmodel.compile(ks.optimizers.Adam(0.03), ks.losses.mean_squared_error)
+    encdecmodel.fit_generator(gen_batch(), steps_per_epoch=100, epochs=3)
 
     x, y = generate_sines(0.5, 100)
 
