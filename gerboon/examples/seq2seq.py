@@ -1,6 +1,5 @@
 import numpy as np
 import keras as ks
-import keras.backend as K
 import matplotlib.pyplot as plt
 
 batch_size = 128
@@ -106,8 +105,12 @@ def make_prediction(E, D, previous_timesteps_x, previous_y, n_output_timesteps):
 if __name__ == "__main__":
     encoder, decoder, encdecmodel = build_seq2seq_model(use_noise=True)
 
+    encdecmodel.load_weights("model_weights.h5")
+
     encdecmodel.compile(ks.optimizers.Adam(0.03), ks.losses.mean_squared_error)
-    encdecmodel.fit_generator(gen_batch(), steps_per_epoch=100, epochs=3)
+    encdecmodel.fit_generator(gen_batch(), steps_per_epoch=100, epochs=2)
+
+    encdecmodel.save_weights("model_weights.h5")
 
     x, y = generate_sines(0.5, 200)
 
