@@ -79,7 +79,26 @@ def check_weather_data(filename):
     return incorrect / (correct + incorrect)
 
 
+# Weather
 print(check_weather_data("weather2014.csv"))
+weather_dataset = pd.read_csv("weather2014.csv")
+weather_dataset = weather_dataset[:168]
+
+values = weather_dataset.values
+# specify columns to plot
+groups = range(1,30)
+i = 1
+# plot each column
+plt.figure()
+for group in groups:
+    # plt.subplot(len(groups), 1, i)
+    plt.plot(values[:, group])
+    plt.title(weather_dataset.columns[group], y=0.5, loc='right')
+    i += 1
+    plt.show()
+
+
+# Energy usage
 # print(calculate_percentage_missing("114-time_cleaned_data.csv"))
 
 # values = dataset.values
