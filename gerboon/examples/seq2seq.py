@@ -1,18 +1,17 @@
 import numpy as np
 import keras as ks
-import keras.backend as K
 import matplotlib.pyplot as plt
 
 batch_size = 128
 
-seq_len_in = 10
+seq_len_in = 100
 seq_len_out = 100
 
 
 def generate_sines(start_angle, length):
-    xs = np.linspace(start_angle, start_angle + length / 4, length)
+    xs = np.linspace(start_angle, start_angle + length / 15, length)
     s1 = np.sin(xs)
-    s2 = np.sin((xs + 1) * 2)
+    s2 = np.sin((xs + 1) * 2.3)
     sout = s1 * s2
     return np.stack((s1, s2), axis=1), np.expand_dims(sout, axis=1)
 
@@ -42,21 +41,33 @@ def gen_batch():
         yield [batch_xe, batch_xd], batch_y
 
 
-def build_seq2seq_model():
+def build_seq2seq_model(use_noise=False):
     # Define model inputs for the encoder/decoder stack
     x_enc = ks.Input(shape=(None, 2))
     x_dec = ks.Input(shape=(None, 1), name="x_dec")
 
+    # This is not normally in seq2seq models (from what I know).
+    # During training the model gets the input for the previous timestep.
+    # Therefore it can be easy to just rely on this value for the most part, since it's always correct
+    # During prediction however, it isn't the real output, but the predicted.
+    # This creates problems when predicting over large time horizons, since all small errors add up
+    # To train the network to rely more on it's memory, I add noise to the inputs during training
+    if use_noise:
+        x_dec_t = ks.layers.GaussianNoise(0.2)(x_dec)
+    else:
+        x_dec_t = x_dec
+
+
     # Define the encoder GRU, which only has to return a state
-    _, state = ks.layers.GRU(20, return_state=True)(x_enc)
+    _, state = ks.layers.GRU(40, return_state=True)(x_enc)
 
     # Define the decoder GRU and the Dense layer that will transform sequences of size 20 vectors to
     # a sequence of 1-long vectors of final predicted values
-    dec_gru = ks.layers.GRU(20, return_state=True, return_sequences=True)
+    dec_gru = ks.layers.GRU(40, return_state=True, return_sequences=True)
     dec_dense = ks.layers.TimeDistributed(ks.layers.Dense(1, activation='linear'))
 
     # Use these definitions to calculate the outputs of out encoder/decoder stack
-    dec_intermediates, _ = dec_gru(x_dec, initial_state=state)
+    dec_intermediates, _ = dec_gru(x_dec_t, initial_state=state)
     dec_outs = dec_dense(dec_intermediates)
 
     # Define the encoder/decoder stack model
@@ -66,7 +77,7 @@ def build_seq2seq_model():
     E = ks.Model(inputs=x_enc, outputs=state)
 
     # Define a state_in model for the Decoder model (which will be used for prediction)
-    state_in = ks.Input(shape=(20,), name="state")
+    state_in = ks.Input(shape=(40,), name="state")
 
     # Use the previously defined layers to calculate the new output value and state for the prediction model as well
     dec_intermediate, new_state = dec_gru(x_dec, initial_state=state_in)
@@ -92,17 +103,21 @@ def make_prediction(E, D, previous_timesteps_x, previous_y, n_output_timesteps):
 
 
 if __name__ == "__main__":
-    encoder, decoder, encdecmodel = build_seq2seq_model()
+    encoder, decoder, encdecmodel = build_seq2seq_model(use_noise=True)
+
+    encdecmodel.load_weights("model_weights.h5")
 
     encdecmodel.compile(ks.optimizers.Adam(0.03), ks.losses.mean_squared_error)
-    encdecmodel.fit_generator(gen_batch(), steps_per_epoch=100, epochs=3)
+    encdecmodel.fit_generator(gen_batch(), steps_per_epoch=100, epochs=2)
 
-    x, y = generate_sines(0.5, 100)
+    encdecmodel.save_weights("model_weights.h5")
+
+    x, y = generate_sines(0.5, 200)
 
     # plt.plot(x[:, 0])
     # plt.plot(x[:, 1])
     plt.plot(y)
 
-    predictions = make_prediction(encoder, decoder, x[:10], y[9:10], 90)
-    plt.plot(np.arange(10, 100), predictions)
+    predictions = make_prediction(encoder, decoder, x[:100], y[99:100], 100)
+    plt.plot(np.arange(100, 200), predictions)
     plt.show()
